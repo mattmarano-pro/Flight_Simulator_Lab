@@ -874,6 +874,12 @@
               <input type="text" id="websiteUrlInput" name="websiteUrl" tabindex="-1" autocomplete="off" />
             </div>
 
+            <!-- Auto-Saved Session Draft Banner -->
+            <div id="draftBanner" style="display:none; background: var(--ua-blue-light); border: 1.5px solid #b6d4f5; color: var(--ua-navy); padding: 9px 14px; border-radius: 8px; font-size: 0.84rem; margin-bottom: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <span>&#128190; <strong>Draft saved</strong> &bull; Resumed from your earlier start time &amp; odometer</span>
+              <button type="button" onclick="resetFormAndDraft()" style="background:none; border:none; color: #b91c1c; font-weight: 700; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">Reset Form</button>
+            </div>
+
             <div class="form-grid">
               <!-- Date -->
               <div class="form-group">
@@ -914,10 +920,7 @@
 
               <!-- Odometer Start -->
               <div class="form-group">
-                <label for="odoStartInput">
-                  <span>Odometer Start (hrs) <span class="req">*</span></span>
-                  <span id="lastOdoBadge" class="helper-badge" style="display:none;" onclick="applyLastOdometer()">Use Last: <strong id="lastOdoVal"></strong></span>
-                </label>
+                <label for="odoStartInput">Odometer Start (hrs) <span class="req">*</span></label>
                 <div class="input-row">
                   <input type="text" inputmode="decimal" id="odoStartInput" placeholder="e.g. 1245.5 or N/A" maxlength="12" required oninput="updateCalculations()" />
                   <button type="button" class="quick-btn" onclick="setOdometerNA()">N/A</button>
@@ -1309,13 +1312,25 @@
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
       document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
-      setNow('timeStartInput');
+
+      const formEl = document.getElementById('logForm');
+      if (formEl) {
+        formEl.addEventListener('input', saveDraft);
+        formEl.addEventListener('change', saveDraft);
+      }
+
+      const hasDraft = restoreDraft();
+      if (!hasDraft) {
+        setNow('timeStartInput');
+      }
 
       const params = new URLSearchParams(window.location.search);
-      if (params.get('type') === 'tour') {
-        setLogType('Lab Tour');
-      } else if (params.get('type') === 'demo') {
-        setLogType('Lab Demonstration');
+      if (!hasDraft) {
+        if (params.get('type') === 'tour') {
+          setLogType('Lab Tour');
+        } else if (params.get('type') === 'demo') {
+          setLogType('Lab Demonstration');
+        }
       }
 
       const savedEncBlob = ENCRYPTED_WEBHOOK_CIPHERTEXT || localStorage.getItem(ENC_WEBHOOK_STORAGE_KEY);
@@ -1445,12 +1460,15 @@
       }
     }
 
+    const DRAFT_STORAGE_KEY = 'ua_flight_sim_draft_v2';
+
     function setNow(inputId) {
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
       const min = String(now.getMinutes()).padStart(2, '0');
       document.getElementById(inputId).value = `${hh}:${min}`;
       updateCalculations();
+      saveDraft();
     }
 
     function selectPurposeChip(text) {
@@ -1460,12 +1478,87 @@
       document.querySelectorAll('#purposeChips .chip').forEach(c => {
         c.classList.toggle('active', c.textContent === text);
       });
+      saveDraft();
     }
 
-    function applyLastOdometer() {
-      const val = document.getElementById('lastOdoVal').textContent;
-      if (val) {
-        document.getElementById('odoStartInput').value = val;
+    function saveDraft() {
+      const draft = {
+        logType: currentLogType,
+        date: document.getElementById('dateInput').value,
+        demonstrator: document.getElementById('demonstratorInput').value,
+        timeStart: document.getElementById('timeStartInput').value,
+        timeEnd: document.getElementById('timeEndInput').value,
+        odoStart: document.getElementById('odoStartInput').value,
+        odoEnd: document.getElementById('odoEndInput').value,
+        purpose: document.getElementById('purposeInput').value,
+        tourOrganiser: document.getElementById('tourOrganiserInput').value,
+        participants: document.getElementById('participantsInput').value,
+        savedAt: Date.now()
+      };
+      const hasContent = draft.demonstrator || draft.timeStart || draft.odoStart || (draft.purpose && draft.purpose !== 'Lab Tour');
+      if (hasContent) {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        showDraftBanner(true);
+      }
+    }
+
+    function restoreDraft() {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) {
+        showDraftBanner(false);
+        return false;
+      }
+      try {
+        const draft = JSON.parse(raw);
+        if (draft.savedAt && (Date.now() - draft.savedAt < 86400000)) {
+          if (draft.logType) setLogType(draft.logType);
+          if (draft.date) document.getElementById('dateInput').value = draft.date;
+          if (draft.demonstrator) document.getElementById('demonstratorInput').value = draft.demonstrator;
+          if (draft.timeStart) document.getElementById('timeStartInput').value = draft.timeStart;
+          if (draft.timeEnd) document.getElementById('timeEndInput').value = draft.timeEnd;
+          if (draft.odoStart) document.getElementById('odoStartInput').value = draft.odoStart;
+          if (draft.odoEnd) document.getElementById('odoEndInput').value = draft.odoEnd;
+          if (draft.purpose) {
+            document.getElementById('purposeInput').value = draft.purpose;
+            document.querySelectorAll('#purposeChips .chip').forEach(c => {
+              c.classList.toggle('active', c.textContent === draft.purpose);
+            });
+          }
+          if (draft.tourOrganiser) document.getElementById('tourOrganiserInput').value = draft.tourOrganiser;
+          if (draft.participants) document.getElementById('participantsInput').value = draft.participants;
+          updateCalculations();
+          showDraftBanner(true);
+          return true;
+        } else {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          showDraftBanner(false);
+        }
+      } catch (e) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+      return false;
+    }
+
+    function showDraftBanner(show) {
+      const el = document.getElementById('draftBanner');
+      if (el) el.style.display = show ? 'flex' : 'none';
+    }
+
+    function resetFormAndDraft() {
+      if (confirm('Discard this in-progress draft and reset the form?')) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        showDraftBanner(false);
+        document.getElementById('logForm').reset();
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
+        setNow('timeStartInput');
+        document.getElementById('timeEndInput').value = '';
+        document.getElementById('odoStartInput').value = '';
+        document.getElementById('odoEndInput').value = '';
+        document.querySelectorAll('#purposeChips .chip').forEach(c => c.classList.remove('active'));
         updateCalculations();
       }
     }
@@ -1478,6 +1571,7 @@
       document.getElementById('odoStartInput').value = 'N/A';
       document.getElementById('odoEndInput').value = 'N/A';
       updateCalculations();
+      saveDraft();
     }
 
     function computeDurationMinutes(tStart, tEnd) {
@@ -1599,15 +1693,6 @@
       document.getElementById('statDemoCount').textContent = String(demoCount);
       document.getElementById('statTourCount').textContent = `${tourCount} (${totalParticipants} ppl)`;
 
-      if (lastOdo) {
-        document.getElementById('lastOdoBadge').style.display = 'inline-block';
-        document.getElementById('lastOdoVal').textContent = lastOdo;
-        const odoStartInput = document.getElementById('odoStartInput');
-        if (!odoStartInput.value) {
-          odoStartInput.value = lastOdo;
-        }
-      }
-
       renderLogsTable();
     }
 
@@ -1686,7 +1771,7 @@
         const oStart = Number(rawStart);
         const oEnd = Number(rawEnd);
         if (rawStart === '' || rawEnd === '' || isNaN(oStart) || isNaN(oEnd) || oStart < 0 || oEnd < oStart || (oEnd - oStart) > 24) {
-          alert('Invalid odometer readings. Enter valid hours (End >= Start, within 24 hours) or N/A.');
+          alert('Invalid odometer readings. Enter valid numbers (End >= Start, within 24 hours) or N/A.');
           return;
         }
         odoStartFormatted = oStart.toFixed(1);
@@ -1816,11 +1901,22 @@
         await writeAllLogsToLinkedFile();
       }
 
-      document.getElementById('odoStartInput').value = payload.odometerEnd !== 'N/A' ? payload.odometerEnd : '';
+      // Clear active draft after successful submission
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      showDraftBanner(false);
+
+      // Reset form for next user
+      document.getElementById('odoStartInput').value = '';
       document.getElementById('odoEndInput').value = '';
       document.getElementById('purposeInput').value = '';
       document.getElementById('tourOrganiserInput').value = '';
       document.getElementById('participantsInput').value = '';
+      document.querySelectorAll('#purposeChips .chip').forEach(c => c.classList.remove('active'));
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
       setNow('timeStartInput');
       document.getElementById('timeEndInput').value = '';
       updateCalculations();
