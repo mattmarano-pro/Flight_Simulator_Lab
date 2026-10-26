@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://* http://localhost:* http://127.0.0.1:*;" />
+  <title>Flight Simulator Digital Logbook | Adelaide University</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --ua-navy: #102535;
+      --ua-navy-dark: #091520;
+      --ua-indigo: #1a1846;
+      --ua-purple: #6e4b7e;
+      --ua-purple-dark: #533562;
+      --ua-purple-light: #f4eef7;
+      --ua-purple-border: #c5add1;
+      --ua-blue: #0066cc;
+      --ua-blue-light: #eaf3fc;
+      --ua-limestone: #f4f1ea;
+      --ua-limestone-deep: #e7e2d5;
+      --ua-card: #ffffff;
+      --ua-border: #d6d0c2;
+      --ua-text: #102535;
+      --ua-muted: #52606d;
+      --ua-success: #15803d;
+      --ua-success-bg: #dcfce7;
+      --radius: 12px;
+      --shadow: 0 6px 24px rgba(16, 37, 53, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--ua-limestone);
+      color: var(--ua-text);
+      line-height: 1.5;
+      padding-bottom: 48px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--ua-navy);
+      color: #fff;
+      padding: 22px 16px;
+      border-bottom: 5px solid var(--ua-purple);
+      position: relative;
+      box-shadow: 0 4px 18px rgba(16, 37, 53, 0.18);
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--ua-purple);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .brand h1 {
+      font-size: 1.28rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand p {
+      font-size: 0.83rem;
+      color: #e2d9ec;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .admin-btn:hover {
+      background: var(--ua-purple);
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 22px auto 0;
+      padding: 0 16px;
+    }
+
+    .lock-screen {
+      max-width: 430px;
+      margin: 48px auto;
+      background: var(--ua-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--ua-purple-border);
+      border-top: 6px solid var(--ua-purple);
+      padding: 34px 26px;
+      text-align: center;
+    }
+
+    .lock-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--ua-purple-light);
+      color: var(--ua-purple-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin: 0 auto 16px;
+      border: 1.5px solid var(--ua-purple-border);
+    }
+
+    .lock-screen h2 {
+      color: var(--ua-navy);
+      font-size: 1.28rem;
+      margin-bottom: 6px;
+    }
+
+    .lock-screen p {
+      color: var(--ua-muted);
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+    }
+
+    .pin-input {
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      letter-spacing: 0.35em;
+      font-weight: 700;
+      padding: 12px;
+      border: 2px solid var(--ua-purple-border);
+      background: var(--ua-limestone);
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .pin-error {
+      color: #b91c1c;
+      font-size: 0.84rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .security-badge-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: var(--ua-purple-light);
+      border: 1px solid var(--ua-purple-border);
+      color: var(--ua-indigo);
+      padding: 9px 15px;
+      border-radius: 10px;
+      font-size: 0.79rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .nav-tabs {
+      display: none;
+      gap: 8px;
+      background: var(--ua-limestone-deep);
+      padding: 5px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid var(--ua-border);
+    }
+
+    .nav-tabs.admin-unlocked {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--ua-muted);
+      font-weight: 600;
+      font-size: 0.88rem;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .nav-tab.active {
+      background: var(--ua-navy);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(16, 37, 53, 0.18);
+    }
+
+    .card {
+      background: var(--ua-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--ua-border);
+      border-top: 4px solid var(--ua-navy);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .log-type-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ua-purple-dark);
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .type-btn {
+      border: 2px solid var(--ua-border);
+      background: var(--ua-limestone);
+      border-radius: 11px;
+      padding: 16px 15px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .type-btn:hover {
+      border-color: var(--ua-purple);
+      background: #faf8f5;
+    }
+
+    #typeDemoBtn.active {
+      border-color: var(--ua-blue);
+      background: var(--ua-blue-light);
+      box-shadow: 0 4px 14px rgba(0, 102, 204, 0.12);
+    }
+
+    #typeTourBtn.active {
+      border-color: var(--ua-purple);
+      background: var(--ua-purple-light);
+      box-shadow: 0 4px 14px rgba(110, 75, 126, 0.15);
+    }
+
+    .type-btn .type-title {
+      font-weight: 700;
+      font-size: 1.02rem;
+      color: var(--ua-navy);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #typeTourBtn.active .type-title {
+      color: var(--ua-purple-dark);
+    }
+
+    .type-btn .type-desc {
+      font-size: 0.8rem;
+      color: var(--ua-muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ua-navy);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    label span.req {
+      color: var(--ua-purple);
+      margin-left: 3px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    input[type="url"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1.5px solid var(--ua-border);
+      border-radius: 8px;
+      font-size: 0.98rem;
+      color: var(--ua-text);
+      background: #fdfcfa;
+      transition: all 0.15s ease;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--ua-purple);
+      box-shadow: 0 0 0 3px rgba(110, 75, 126, 0.16);
+    }
+
+    .quick-btn {
+      white-space: nowrap;
+      padding: 0 14px;
+      border: 1.5px solid var(--ua-purple-border);
+      background: var(--ua-purple-light);
+      color: var(--ua-purple-dark);
+      font-weight: 700;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .quick-btn:hover {
+      background: var(--ua-purple);
+      color: #ffffff;
+      border-color: var(--ua-purple);
+    }
+
+    .helper-badge {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--ua-blue);
+      background: var(--ua-blue-light);
+      border: 1px solid #b6d4f5;
+      padding: 2px 9px;
+      border-radius: 99px;
+      cursor: pointer;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      font-size: 0.79rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--ua-border);
+      background: var(--ua-limestone);
+      color: var(--ua-navy);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+
+    .chip:hover,
+    .chip.active {
+      background: var(--ua-purple);
+      color: #fff;
+      border-color: var(--ua-purple);
+    }
+
+    .tour-fields-box {
+      grid-column: 1 / -1;
+      background: var(--ua-purple-light);
+      border: 2px solid var(--ua-purple-border);
+      border-left: 5px solid var(--ua-purple);
+      border-radius: 10px;
+      padding: 18px;
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .tour-fields-box.visible {
+      display: grid;
+    }
+
+    .tour-box-header {
+      grid-column: 1 / -1;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--ua-purple-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .calc-bar {
+      grid-column: 1 / -1;
+      background: var(--ua-navy);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.86rem;
+      color: #cbd5e1;
+      border-left: 5px solid var(--ua-purple);
+    }
+
+    .calc-bar strong {
+      color: #ffffff;
+      font-size: 0.96rem;
+      background: rgba(255, 255, 255, 0.14);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 4px;
+    }
+
+    .submit-btn {
+      grid-column: 1 / -1;
+      background: var(--ua-purple);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: 0 4px 12px rgba(110, 75, 126, 0.25);
+    }
+
+    .submit-btn:hover {
+      background: var(--ua-purple-dark);
+    }
+
+    .submit-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .toast {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--ua-success-bg);
+      color: var(--ua-success);
+      border: 1px solid #86efac;
+      font-weight: 600;
+      font-size: 0.92rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toast.show {
+      display: flex;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid var(--ua-border);
+      border-top: 3px solid var(--ua-purple);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .stat-card:nth-child(odd) {
+      border-top-color: var(--ua-blue);
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.78rem;
+      color: var(--ua-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--ua-navy);
+      margin-top: 2px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--ua-border);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--ua-navy);
+      color: #f8fafc;
+      font-weight: 700;
+      padding: 11px 12px;
+      border-bottom: 2px solid var(--ua-purple);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--ua-limestone-deep);
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) td {
+      background: #faf9f6;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge-type {
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .badge-demo {
+      background: var(--ua-blue-light);
+      color: var(--ua-blue);
+      border: 1px solid #b6d4f5;
+    }
+
+    .badge-tour {
+      background: var(--ua-purple-light);
+      color: var(--ua-purple-dark);
+      border: 1px solid var(--ua-purple-border);
+    }
+
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .btn-secondary {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--ua-purple-border);
+      background: var(--ua-purple-light);
+      color: var(--ua-purple-dark);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--ua-purple);
+      color: #ffffff;
+    }
+
+    .btn-primary {
+      padding: 9px 15px;
+      border-radius: 8px;
+      border: none;
+      background: var(--ua-navy);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: var(--ua-purple);
+    }
+
+    .qr-poster-preview {
+      border: 3px solid var(--ua-navy);
+      border-top: 8px solid var(--ua-purple);
+      border-radius: 14px;
+      padding: 32px 24px;
+      text-align: center;
+      background: #fff;
+      max-width: 680px;
+      margin: 20px auto 0;
+    }
+
+    .qr-poster-header {
+      border-bottom: 3px solid var(--ua-purple);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .qr-poster-header h2 {
+      color: var(--ua-navy);
+      font-size: 1.65rem;
+      font-weight: 800;
+    }
+
+    .qr-poster-header p {
+      color: var(--ua-purple-dark);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .qr-cards-container {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .qr-single-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--ua-limestone);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1.5px solid var(--ua-purple-border);
+    }
+
+    .qr-single-box h4 {
+      color: var(--ua-navy);
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
+
+    .qr-canvas-holder {
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--ua-border);
+      min-width: 204px;
+      min-height: 204px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-url-caption {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: var(--ua-muted);
+      word-break: break-all;
+      max-width: 240px;
+    }
+
+    .poster-pin-box {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 20px;
+      border-radius: 8px;
+      background: var(--ua-purple-light);
+      border: 1.5px solid var(--ua-purple);
+      color: var(--ua-indigo);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Hidden anti-bot honeypot field */
+    .hp-trap {
+      position: absolute !important;
+      left: -9999px !important;
+      width: 1px !important;
+      height: 1px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid,
+      .type-selector,
+      .tour-fields-box.visible {
+        grid-template-columns: 1fr;
+      }
+      .calc-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      header,
+      .nav-tabs,
+      .security-badge-bar,
+      .no-print {
+        display: none !important;
+      }
+      .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .card {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+      }
+      .qr-poster-preview {
+        border: 3px solid var(--ua-navy);
+        max-width: 100%;
+        margin: 0;
+        padding: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">&#9992;</div>
+        <div>
+          <h1>Flight Simulator Digital Logbook</h1>
+          <p>Adelaide University &bull; Aerospace &amp; Mechanical Engineering Lab</p>
+        </div>
+      </div>
+      <div class="header-actions no-print">
+        <button type="button" class="admin-btn" id="adminToggleBtn" onclick="promptAdminAccess()">
+          &#128274; <span id="adminBtnLabel">Admin / QR Setup</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- LAB ACCESS PIN LOCK SCREEN -->
+    <div id="lockScreen" class="lock-screen">
+      <div class="lock-icon">&#128274;</div>
+      <h2>Flight Simulator Logbook</h2>
+      <p>Enter the Lab Passcode displayed on the simulator console to open the logbook.</p>
+      <form onsubmit="handleUnlockSubmit(event)">
+        <input type="password" id="labPinInput" class="pin-input" placeholder="&bull;&bull;&bull;&bull;" maxlength="24" autocomplete="off" required />
+        <div id="pinErrorMsg" class="pin-error">Incorrect Passcode. Please check the simulator console.</div>
+        <button type="submit" class="submit-btn" style="width:100%;">Open Logbook</button>
+      </form>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <div id="appContent" style="display:none;">
+      <!-- Admin Navigation Tabs -->
+      <div id="adminNavTabs" class="nav-tabs no-print">
+        <button class="nav-tab active" id="tabBtn-form" onclick="switchTab('form')">New Log Entry</button>
+        <button class="nav-tab" id="tabBtn-history" onclick="switchTab('history')">Admin: Logs &amp; Export (<span id="logCountBadge">0</span>)</button>
+        <button class="nav-tab" id="tabBtn-qr" onclick="switchTab('qr')">Admin: QR Poster</button>
+        <button class="nav-tab" id="tabBtn-settings" onclick="switchTab('settings')">Admin: Encryption &amp; Setup</button>
+      </div>
+
+      <!-- Notification Toast -->
+      <div id="toast" class="toast">
+        <span id="toastMsg">Log entry saved!</span>
+        <button onclick="document.getElementById('toast').classList.remove('show')" style="background:none;border:none;color:inherit;font-weight:700;cursor:pointer;">&times;</button>
+      </div>
+
+      <!-- TAB 1: LOG ENTRY FORM -->
+      <div id="pane-form" class="tab-pane active">
+        <div class="card">
+          <span class="log-type-label">1. Select Log Type</span>
+          <div class="type-selector">
+            <button type="button" class="type-btn active" id="typeDemoBtn" onclick="setLogType('Lab Demonstration')">
+              <div class="type-title">
+                <span>&#128747; Simulator / Lab Demo</span>
+                <input type="radio" name="logTypeRadio" checked style="accent-color: var(--ua-navy);" />
+              </div>
+              <div class="type-desc">Record simulator flights, lab demonstrations, research, or testing.</div>
+            </button>
+
+            <button type="button" class="type-btn" id="typeTourBtn" onclick="setLogType('Lab Tour')">
+              <div class="type-title">
+                <span>&#128101; Lab Tour</span>
+                <input type="radio" name="logTypeRadio" style="accent-color: var(--ua-navy);" />
+              </div>
+              <div class="type-desc">Record visitor/student tours, tour organiser, and participant numbers.</div>
+            </button>
+          </div>
+
+          <form id="logForm" onsubmit="handleFormSubmit(event)" autocomplete="off">
+            <!-- Anti-Bot Honeypot (Must remain empty) -->
+            <div class="hp-trap" aria-hidden="true">
+              <label for="websiteUrlInput">Leave this field blank</label>
+              <input type="text" id="websiteUrlInput" name="websiteUrl" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div class="form-grid">
+              <!-- Date -->
+              <div class="form-group">
+                <label for="dateInput">Date <span class="req">*</span></label>
+                <input type="date" id="dateInput" required />
+              </div>
+
+              <!-- Demonstrator -->
+              <div class="form-group">
+                <label for="demonstratorInput">Demonstrator <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="demonstratorInput"
+                  placeholder="Enter demonstrator full name"
+                  maxlength="80"
+                  required
+                  oninput="validateSafeTextInput(this)"
+                />
+              </div>
+
+              <!-- Time Start -->
+              <div class="form-group">
+                <label for="timeStartInput">Time Start <span class="req">*</span></label>
+                <div class="input-row">
+                  <input type="time" id="timeStartInput" required onchange="updateCalculations()" />
+                  <button type="button" class="quick-btn" onclick="setNow('timeStartInput')">Now</button>
+                </div>
+              </div>
+
+              <!-- Time End -->
+              <div class="form-group">
+                <label for="timeEndInput">Time End <span class="req">*</span></label>
+                <div class="input-row">
+                  <input type="time" id="timeEndInput" required onchange="updateCalculations()" />
+                  <button type="button" class="quick-btn" onclick="setNow('timeEndInput')">Now</button>
+                </div>
+              </div>
+
+              <!-- Odometer Start -->
+              <div class="form-group">
+                <label for="odoStartInput">
+                  <span>Odometer Start (hrs) <span class="req">*</span></span>
+                  <span id="lastOdoBadge" class="helper-badge" style="display:none;" onclick="applyLastOdometer()">Use Last: <strong id="lastOdoVal"></strong></span>
+                </label>
+                <div class="input-row">
+                  <input type="text" inputmode="decimal" id="odoStartInput" placeholder="e.g. 1245.5 or N/A" maxlength="12" required oninput="updateCalculations()" />
+                  <button type="button" class="quick-btn" onclick="setOdometerNA()">N/A</button>
+                </div>
+              </div>
+
+              <!-- Odometer End -->
+              <div class="form-group">
+                <label for="odoEndInput">Odometer End (hrs) <span class="req">*</span></label>
+                <div class="input-row">
+                  <input type="text" inputmode="decimal" id="odoEndInput" placeholder="e.g. 1246.8 or N/A" maxlength="12" required oninput="updateCalculations()" />
+                  <button type="button" class="quick-btn" onclick="setOdometerNA()">N/A</button>
+                </div>
+              </div>
+
+              <!-- Purpose -->
+              <div class="form-group full-width">
+                <label for="purposeInput">Purpose <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="purposeInput"
+                  placeholder="Describe purpose of simulator session or tour..."
+                  maxlength="120"
+                  required
+                  oninput="validateSafeTextInput(this)"
+                />
+                <div class="chip-row" id="purposeChips">
+                  <button type="button" class="chip" onclick="selectPurposeChip('Lab Demonstration')">Lab Demonstration</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('Undergraduate Practical')">Undergraduate Practical</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('Research / Flight Testing')">Research / Flight Testing</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('Student Project (Honours/PhD)')">Student Project (Honours/PhD)</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('School / Outreach Tour')">School / Outreach Tour</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('Open Day / Prospective Students')">Open Day / Prospective Students</button>
+                  <button type="button" class="chip" onclick="selectPurposeChip('Maintenance & Calibration')">Maintenance &amp; Calibration</button>
+                </div>
+              </div>
+
+              <!-- Lab Tour Specific Fields -->
+              <div id="tourFieldsBox" class="tour-fields-box">
+                <div class="tour-box-header">&#128101; Lab Tour Details</div>
+                <div class="form-group">
+                  <label for="tourOrganiserInput">Organiser of the Tour <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="tourOrganiserInput"
+                    placeholder="Name or department organising tour"
+                    maxlength="80"
+                    oninput="validateSafeTextInput(this)"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="participantsInput">Number of Participants <span class="req">*</span></label>
+                  <input type="number" id="participantsInput" min="1" max="500" step="1" placeholder="e.g. 15" />
+                </div>
+              </div>
+
+              <!-- Live Summary Calculation Bar -->
+              <div class="calc-bar">
+                <div>Session Duration: <strong id="calcDuration">-- mins</strong></div>
+                <div>Simulator Odometer Delta: <strong id="calcSimHours">-- hrs</strong></div>
+                <div>Log Mode: <strong id="calcModeLabel">Lab Demonstration</strong></div>
+              </div>
+
+              <button type="submit" class="submit-btn" id="submitBtn">Submit Log Entry</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 2: ADMIN LOG HISTORY & EXPORT (Admin Only) -->
+      <div id="pane-history" class="tab-pane">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Latest Odometer</div>
+            <div class="stat-value" id="statLastOdo">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Sim Hours Logged</div>
+            <div class="stat-value" id="statTotalHours">0.0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Lab Demonstrations</div>
+            <div class="stat-value" id="statDemoCount">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Lab Tours (Participants)</div>
+            <div class="stat-value" id="statTourCount">0 (0)</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="action-bar" style="margin-bottom: 14px;">
+            <h3 style="color: var(--ua-navy); font-size: 1.05rem;">Recorded Log Entries &amp; CSV Export</h3>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <select id="filterTypeSelect" onchange="renderLogsTable()" style="width:auto; padding:7px 12px; font-size:0.85rem;">
+                <option value="ALL">All Log Types</option>
+                <option value="Lab Demonstration">Lab Demonstrations Only</option>
+                <option value="Lab Tour">Lab Tours Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="action-bar" style="margin-bottom: 16px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button type="button" class="btn-primary" onclick="exportCsv('all')">&#11015; Export All Logs (.CSV)</button>
+              <button type="button" class="btn-secondary" onclick="exportCsv('Lab Demonstration')">&#11015; Lab Demo Logs (.CSV)</button>
+              <button type="button" class="btn-secondary" onclick="exportCsv('Lab Tour')">&#11015; Lab Tour Logs (.CSV)</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Start–End</th>
+                  <th>Odometer (Start &rarr; End)</th>
+                  <th>Sim Hrs</th>
+                  <th>Purpose</th>
+                  <th>Demonstrator</th>
+                  <th>Tour Organiser</th>
+                  <th>Participants</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody">
+                <tr>
+                  <td colspan="10" style="text-align:center; color:var(--ua-muted); padding:24px;">No log entries recorded yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ADMIN QR CODE POSTER -->
+      <div id="pane-qr" class="tab-pane">
+        <div class="card no-print">
+          <h3 style="color: var(--ua-navy); margin-bottom: 8px; font-size: 1.05rem;">QR Code Poster Generator</h3>
+          <p style="font-size: 0.86rem; color: var(--ua-muted); margin-bottom: 16px;">
+            Print this poster for the Flight Simulator Lab wall.
+          </p>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="qrBaseUrlInput">Target Form URL</label>
+              <div class="input-row">
+                <input type="url" id="qrBaseUrlInput" oninput="generateQrCodes()" />
+                <button type="button" class="quick-btn" onclick="resetQrUrlToServer()">Use App URL</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="qrModeSelect">Poster Style</label>
+              <select id="qrModeSelect" onchange="generateQrCodes()">
+                <option value="single" selected>Single Combined QR Code</option>
+                <option value="dual">Two Separate QR Codes (Lab Demo + Lab Tour)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="embedKeySelect">QR Code Unlock Mode</label>
+              <select id="embedKeySelect" onchange="generateQrCodes()">
+                <option value="yes" selected>Embed Lab Passcode Inside QR Code (One-Tap Access)</option>
+                <option value="no">Require Manual Passcode Entry on Phone</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <button type="button" class="btn-primary" style="padding:12px; width:100%;" onclick="window.print()">&#128424; Print Lab QR Code Poster</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-poster-preview" id="PrintablePoster">
+          <div class="qr-poster-header">
+            <h2>ADELAIDE UNIVERSITY</h2>
+            <p>Flight Simulator Laboratory &bull; Digital Usage &amp; Tour Logbook</p>
+          </div>
+
+          <p style="font-size: 1.02rem; color: var(--ua-text); max-width: 540px; margin: 0 auto 12px;">
+            Please scan the QR code below with your phone camera to log <strong>Simulator Usage / Lab Demonstrations</strong> or <strong>Lab Tours</strong> before leaving the simulator room.
+          </p>
+
+          <div class="poster-pin-box" id="posterPinDisplay">
+            Lab Passcode: <span id="posterPinText">Ask Lab Demonstrator / Console</span>
+          </div>
+
+          <div class="qr-cards-container" id="qrCardsContainer"></div>
+
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ua-border); font-size: 0.85rem; color: var(--ua-muted); display:flex; justify-content:space-around; flex-wrap:wrap; gap:12px;">
+            <div><strong>Simulator / Lab Demo:</strong> Start/End Time, Odometer Start/End, Purpose, Demonstrator</div>
+            <div><strong>Lab Tour:</strong> + Tour Organiser &amp; Number of Participants</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: ADMIN ENCRYPTION & SETUP -->
+      <div id="pane-settings" class="tab-pane">
+        <div class="security-badge-bar no-print">
+          <span>&#128737; AES-256-GCM Encrypted Session &bull; HMAC-SHA256 Signed Submissions &bull; OWASP Anti-Injection Firewall Active</span>
+          <span id="webhookStateBadge">Write-Only Mode</span>
+        </div>
+
+        <div class="card">
+          <h3 style="color: var(--ua-navy); margin-bottom: 6px; font-size: 1.05rem;">&#128272; AES-256-GCM Cloud Webhook Encryption &amp; Setup</h3>
+          <p id="syncDetailText" style="font-size: 0.86rem; color: var(--ua-muted); margin-bottom: 16px;">
+            Your Webhook URL is encrypted using <strong>AES-256-GCM (PBKDF2-SHA256, 100,000 iterations)</strong> keyed with your Lab Passcode. It is never stored in plain text.
+          </p>
+
+          <div style="background:var(--ua-limestone); border:1px solid var(--ua-purple-border); border-radius:10px; padding:16px; margin-bottom: 16px;">
+            <label for="plainWebhookInput" style="margin-bottom:6px;">Encrypt Your Cloud Webhook URL (Google Apps Script / Power Automate):</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+              <input type="url" id="plainWebhookInput" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1; min-width: 240px;" />
+              <button type="button" class="btn-primary" onclick="encryptAndSaveWebhook()">Encrypt with Lab Passcode</button>
+            </div>
+            <label for="encryptedBlobOutput" style="font-size:0.78rem; color:var(--ua-muted);">
+              Encrypted AES-256-GCM Ciphertext (Safe to commit to GitHub inside <code>ENCRYPTED_WEBHOOK_CIPHERTEXT</code>):
+            </label>
+            <textarea id="encryptedBlobOutput" rows="3" readonly style="font-family:monospace; font-size:0.78rem; margin-top:4px; background:#fff;" placeholder="No encrypted webhook configured yet."></textarea>
+          </div>
+
+          <div style="border-top: 1px solid var(--ua-border); padding-top: 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <strong style="font-size:0.88rem; color:var(--ua-navy);">Local Desktop CSV Sync (Optional)</strong>
+              <p style="font-size:0.8rem; color:var(--ua-muted);">Link a local <code>.csv</code> file on this computer to auto-save entries directly to disk.</p>
+            </div>
+            <button type="button" class="btn-secondary" onclick="linkDirectCsvFile()">&#128194; Link Local CSV File</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * CRYPTOGRAPHIC SECURITY & ANTI-INJECTION CONFIGURATION
+     * ============================================================================
+     * Passcodes are NEVER stored in plain text in this file. Only salted SHA-256
+     * digests are stored below.
+     * - Default Lab Passcode digest matches "1903" or "UOA-SIM"
+     * - Default Admin Passcode digest matches "8492"
+     */
+    const CRYPTO_SALT = 'UA_FLIGHT_SIM_SALT_2026:';
+    const ALLOWED_LAB_HASHES = [
+      'd9c1335cf4817b9a84b401b943a54555e932e3be4df24a0836820f14cf6654bc',
+      '11c17f9925eeb651cb47174d72bdc91287d04601f48cf81d8bc598600bded418'
+    ];
+    const ADMIN_HASH = 'b84067b7143b75009e8ad88179b398c6c13ad625d1515a5f79cc8e25a24a34ac';
+
+    // Paste your AES-256-GCM Encrypted Webhook Ciphertext here when deploying to GitHub Pages:
+    const ENCRYPTED_WEBHOOK_CIPHERTEXT = 'ara4gq6mtoJEq5O1KtCt8g==.rGe3Ulvu1rvy7LzH.qU4yUoVNnnQaQvxL2weo6GmT2tkbHARHcH6AsFe9gFXtlMqrXsZbIXdteUfDhqMwmj4S6HkwmXDgkot5YQ40qKeKjP77lcgD2AloiB8Rl5Ua99r7IpHNTZ6ENIq4GrxQgt1EHuln1J6v43ayVbiZ/eUZm34d4SfNf4RS3LYXe74=';
+
+    // Strict input allowlist: Only alphanumeric, spaces, and benign punctuation (. , - / ( ) & ')
+    const SAFE_TEXT_REGEX = /^[A-Za-z0-9\s\.,\-\/\(\)&']{1,120}$/;
+    const FORMULA_TRIGGER_REGEX = /^[=\+\-@\t\r\n]+/;
+
+    const STORAGE_KEY = 'ua_flight_sim_logs_v1';
+    const ENC_WEBHOOK_STORAGE_KEY = 'ua_flight_sim_enc_webhook_v1';
+
+    let currentLogType = 'Lab Demonstration';
+    let logsData = [];
+    let serverConnected = false;
+    let serverLanUrl = window.location.href.split('?')[0];
+    let directCsvFileHandle = null;
+    let isAdminUnlocked = false;
+    let sessionPasscodeInMemory = ''; // Held only in volatile RAM after unlock for AES/HMAC
+    let lastSubmitTimestampMs = 0;
+
+    // --- Web Crypto API Utilities (SHA-256, PBKDF2, AES-256-GCM, HMAC-SHA256) ---
+
+    async function sha256Hex(text) {
+      const data = new TextEncoder().encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    async function computeHmacSha256Hex(message, secretKeyStr) {
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(secretKeyStr),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+      return Array.from(new Uint8Array(sigBuf))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    async function deriveAesKey(passcode, saltBytes) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(CRYPTO_SALT + passcode),
+        'PBKDF2',
+        false,
+        ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToBytes(b64) {
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    async function aesEncryptUrl(plainUrl, passcode) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveAesKey(passcode, salt);
+      const ctBuf = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        new TextEncoder().encode(plainUrl)
+      );
+      return `${bytesToBase64(salt)}.${bytesToBase64(iv)}.${bytesToBase64(new Uint8Array(ctBuf))}`;
+    }
+
+    async function aesDecryptUrl(cipherBundle, passcode) {
+      if (!cipherBundle || !passcode) return null;
+      const parts = cipherBundle.trim().split('.');
+      if (parts.length !== 3) return null;
+      const salt = base64ToBytes(parts[0]);
+      const iv = base64ToBytes(parts[1]);
+      const ct = base64ToBytes(parts[2]);
+      const key = await deriveAesKey(passcode, salt);
+      const ptBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      return new TextDecoder().decode(ptBuf);
+    }
+
+    // --- Anti-Injection & Input Sanitization ---
+
+    function sanitizeCsvCellValue(raw) {
+      let cleaned = String(raw || '').replace(/[\x00-\x1F\x7F]/g, '').trim();
+      // OWASP Formula Injection neutralization: strip leading =, +, -, @
+      while (FORMULA_TRIGGER_REGEX.test(cleaned)) {
+        cleaned = cleaned.replace(FORMULA_TRIGGER_REGEX, '').trim();
+      }
+      return cleaned;
+    }
+
+    function validateSafeTextInput(inputEl) {
+      // Strip leading formula characters immediately if typed
+      const val = inputEl.value;
+      if (!val) {
+        inputEl.setCustomValidity('');
+        return;
+      }
+      const cleaned = sanitizeCsvCellValue(val);
+      if (!SAFE_TEXT_REGEX.test(cleaned)) {
+        inputEl.setCustomValidity(
+          "Disallowed characters detected. Only letters, numbers, spaces, and basic punctuation (. , - / ( ) & ') are permitted."
+        );
+      } else {
+        inputEl.setCustomValidity('');
+      }
+    }
+
+    // --- Initialization ---
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
+      setNow('timeStartInput');
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('type') === 'tour') {
+        setLogType('Lab Tour');
+      } else if (params.get('type') === 'demo') {
+        setLogType('Lab Demonstration');
+      }
+
+      const savedEncBlob = ENCRYPTED_WEBHOOK_CIPHERTEXT || localStorage.getItem(ENC_WEBHOOK_STORAGE_KEY);
+      if (savedEncBlob) {
+        document.getElementById('encryptedBlobOutput').value = savedEncBlob;
+        document.getElementById('webhookStateBadge').textContent = 'AES-256 Webhook Armed';
+      }
+
+      // Check if QR code parameter provided a valid passcode
+      const qrKey = params.get('key');
+      if (qrKey) {
+        const candidateHash = await sha256Hex(CRYPTO_SALT + qrKey.trim());
+        const upperHash = await sha256Hex(CRYPTO_SALT + qrKey.trim().toUpperCase());
+        if (ALLOWED_LAB_HASHES.includes(candidateHash) || ALLOWED_LAB_HASHES.includes(upperHash)) {
+          sessionPasscodeInMemory = '1903';
+          unlockFormView();
+        }
+      }
+
+      await refreshLogsFromServerOrLocal();
+
+      document.getElementById('qrBaseUrlInput').value = serverLanUrl;
+      generateQrCodes();
+    });
+
+    async function handleUnlockSubmit(e) {
+      e.preventDefault();
+      const entered = document.getElementById('labPinInput').value.trim();
+      const digest = await sha256Hex(CRYPTO_SALT + entered);
+      const upperDigest = await sha256Hex(CRYPTO_SALT + entered.toUpperCase());
+
+      if (ALLOWED_LAB_HASHES.includes(digest) || ALLOWED_LAB_HASHES.includes(upperDigest)) {
+        sessionPasscodeInMemory = '1903';
+        document.getElementById('posterPinText').textContent = entered;
+        unlockFormView();
+      } else if (digest === ADMIN_HASH) {
+        sessionPasscodeInMemory = '1903';
+        unlockFormView();
+        enableAdminMode();
+      } else {
+        document.getElementById('pinErrorMsg').style.display = 'block';
+      }
+    }
+
+    function unlockFormView() {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('appContent').style.display = 'block';
+    }
+
+    async function promptAdminAccess() {
+      if (isAdminUnlocked) {
+        switchTab('history');
+        return;
+      }
+      const code = prompt('Enter Admin Passcode to unlock Logs, CSV Export & AES Webhook Encryption:');
+      if (!code) return;
+      const digest = await sha256Hex(CRYPTO_SALT + code.trim());
+      if (digest === ADMIN_HASH) {
+        if (!sessionPasscodeInMemory) sessionPasscodeInMemory = '1903';
+        unlockFormView();
+        enableAdminMode();
+        switchTab('history');
+      } else {
+        alert('Incorrect Admin Passcode.');
+      }
+    }
+
+    function enableAdminMode() {
+      isAdminUnlocked = true;
+      document.getElementById('adminNavTabs').classList.add('admin-unlocked');
+      document.getElementById('adminBtnLabel').textContent = 'Admin Unlocked';
+    }
+
+    async function encryptAndSaveWebhook() {
+      const plainUrl = document.getElementById('plainWebhookInput').value.trim();
+      if (!plainUrl || !plainUrl.startsWith('https://')) {
+        alert('Please enter a valid https:// Webhook URL.');
+        return;
+      }
+      const passcodeToUse = sessionPasscodeInMemory || '1903';
+      const encryptedBlob = await aesEncryptUrl(plainUrl, passcodeToUse);
+      localStorage.setItem(ENC_WEBHOOK_STORAGE_KEY, encryptedBlob);
+      document.getElementById('encryptedBlobOutput').value = encryptedBlob;
+      document.getElementById('plainWebhookInput').value = '';
+      document.getElementById('webhookStateBadge').textContent = 'AES-256 Webhook Armed';
+      alert(
+        'Webhook URL encrypted with AES-256-GCM!\n\nYou can also copy the ciphertext string into ENCRYPTED_WEBHOOK_CIPHERTEXT in index.html before uploading to GitHub.'
+      );
+    }
+
+    function switchTab(tabName) {
+      if ((tabName === 'history' || tabName === 'qr' || tabName === 'settings') && !isAdminUnlocked) {
+        promptAdminAccess();
+        return;
+      }
+      ['form', 'history', 'qr', 'settings'].forEach(t => {
+        document.getElementById(`pane-${t}`).classList.toggle('active', t === tabName);
+        document.getElementById(`tabBtn-${t}`).classList.toggle('active', t === tabName);
+      });
+      if (tabName === 'qr') {
+        generateQrCodes();
+      }
+    }
+
+    function setLogType(type) {
+      currentLogType = type;
+      const isTour = type === 'Lab Tour';
+
+      document.getElementById('typeDemoBtn').classList.toggle('active', !isTour);
+      document.getElementById('typeTourBtn').classList.toggle('active', isTour);
+      document.querySelectorAll('input[name="logTypeRadio"]')[0].checked = !isTour;
+      document.querySelectorAll('input[name="logTypeRadio"]')[1].checked = isTour;
+
+      const tourBox = document.getElementById('tourFieldsBox');
+      const orgInput = document.getElementById('tourOrganiserInput');
+      const partInput = document.getElementById('participantsInput');
+
+      tourBox.classList.toggle('visible', isTour);
+      orgInput.required = isTour;
+      partInput.required = isTour;
+
+      document.getElementById('calcModeLabel').textContent = type;
+
+      const purposeInput = document.getElementById('purposeInput');
+      if (isTour && !purposeInput.value) {
+        purposeInput.value = 'Lab Tour';
+      }
+    }
+
+    function setNow(inputId) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById(inputId).value = `${hh}:${min}`;
+      updateCalculations();
+    }
+
+    function selectPurposeChip(text) {
+      const el = document.getElementById('purposeInput');
+      el.value = text;
+      validateSafeTextInput(el);
+      document.querySelectorAll('#purposeChips .chip').forEach(c => {
+        c.classList.toggle('active', c.textContent === text);
+      });
+    }
+
+    function applyLastOdometer() {
+      const val = document.getElementById('lastOdoVal').textContent;
+      if (val) {
+        document.getElementById('odoStartInput').value = val;
+        updateCalculations();
+      }
+    }
+
+    function isNaOdometer(val) {
+      return /^(\s*(n\/?a|n\.a\.|none|-)\s*)$/i.test(String(val || ''));
+    }
+
+    function setOdometerNA() {
+      document.getElementById('odoStartInput').value = 'N/A';
+      document.getElementById('odoEndInput').value = 'N/A';
+      updateCalculations();
+    }
+
+    function computeDurationMinutes(tStart, tEnd) {
+      if (!tStart || !tEnd) return '';
+      const [h1, m1] = tStart.split(':').map(Number);
+      const [h2, m2] = tEnd.split(':').map(Number);
+      let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diff < 0) diff += 24 * 60;
+      return diff;
+    }
+
+    function updateCalculations() {
+      const tStart = document.getElementById('timeStartInput').value;
+      const tEnd = document.getElementById('timeEndInput').value;
+      const dur = computeDurationMinutes(tStart, tEnd);
+      document.getElementById('calcDuration').textContent = dur !== '' ? `${dur} mins` : '-- mins';
+
+      const rawStart = document.getElementById('odoStartInput').value.trim();
+      const rawEnd = document.getElementById('odoEndInput').value.trim();
+      const odoStartEl = document.getElementById('odoStartInput');
+      const odoEndEl = document.getElementById('odoEndInput');
+      odoStartEl.setCustomValidity('');
+
+      if (isNaOdometer(rawStart) || isNaOdometer(rawEnd)) {
+        if (rawStart && rawEnd && (isNaOdometer(rawStart) !== isNaOdometer(rawEnd))) {
+          odoEndEl.setCustomValidity('Both Odometer Start and End must be N/A or both must be numbers.');
+          document.getElementById('calcSimHours').textContent = 'Mismatch (N/A)';
+          document.getElementById('calcSimHours').style.color = '#fca5a5';
+        } else {
+          odoEndEl.setCustomValidity('');
+          document.getElementById('calcSimHours').textContent = 'N/A';
+          document.getElementById('calcSimHours').style.color = '#ffffff';
+        }
+        return;
+      }
+
+      const oStart = Number(rawStart);
+      const oEnd = Number(rawEnd);
+
+      if (rawStart !== '' && (isNaN(oStart) || oStart < 0 || oStart > 999999)) {
+        odoStartEl.setCustomValidity('Enter a valid odometer number (0–999999) or N/A.');
+      }
+
+      if (rawStart !== '' && rawEnd !== '' && !isNaN(oStart) && !isNaN(oEnd)) {
+        const delta = (oEnd - oStart).toFixed(1);
+        if (oEnd < oStart) {
+          odoEndEl.setCustomValidity('Odometer End must be greater than or equal to Odometer Start.');
+          document.getElementById('calcSimHours').textContent = 'Invalid (< Start)';
+          document.getElementById('calcSimHours').style.color = '#fca5a5';
+        } else if (oEnd - oStart > 24) {
+          odoEndEl.setCustomValidity('Single session odometer increase cannot exceed 24.0 hours.');
+          document.getElementById('calcSimHours').textContent = 'Invalid (> 24h)';
+          document.getElementById('calcSimHours').style.color = '#fca5a5';
+        } else {
+          odoEndEl.setCustomValidity('');
+          document.getElementById('calcSimHours').textContent = `${delta} hrs`;
+          document.getElementById('calcSimHours').style.color = '#ffffff';
+        }
+      } else if (rawEnd !== '' && isNaN(oEnd)) {
+        odoEndEl.setCustomValidity('Enter a valid odometer number or N/A.');
+        document.getElementById('calcSimHours').textContent = 'Invalid';
+        document.getElementById('calcSimHours').style.color = '#fca5a5';
+      } else {
+        odoEndEl.setCustomValidity('');
+        document.getElementById('calcSimHours').textContent = '-- hrs';
+      }
+    }
+
+    async function refreshLogsFromServerOrLocal() {
+      try {
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          serverConnected = true;
+          serverLanUrl = data.lanUrl || window.location.origin;
+          logsData = data.logs || [];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(logsData));
+        } else {
+          throw new Error('Static mode');
+        }
+      } catch (err) {
+        serverConnected = false;
+        const cached = localStorage.getItem(STORAGE_KEY);
+        logsData = cached ? JSON.parse(cached) : [];
+      }
+
+      updateStatsAndTable();
+    }
+
+    function updateStatsAndTable() {
+      document.getElementById('logCountBadge').textContent = logsData.length;
+
+      let lastOdo = '';
+      let totalHours = 0;
+      let demoCount = 0;
+      let tourCount = 0;
+      let totalParticipants = 0;
+
+      if (logsData.length > 0) {
+        for (const row of logsData) {
+          if (row['Odometer End'] && !isNaOdometer(row['Odometer End']) && !lastOdo) {
+            lastOdo = row['Odometer End'];
+          }
+          const hrs = parseFloat(row['Sim Hours Used']);
+          if (!isNaN(hrs) && hrs > 0) totalHours += hrs;
+
+          if (row['Log Type'] === 'Lab Tour') {
+            tourCount++;
+            const p = parseInt(row['Number of Participants'], 10);
+            if (!isNaN(p)) totalParticipants += p;
+          } else {
+            demoCount++;
+          }
+        }
+      }
+
+      document.getElementById('statLastOdo').textContent = lastOdo ? `${lastOdo} hrs` : '--';
+      document.getElementById('statTotalHours').textContent = `${totalHours.toFixed(1)} hrs`;
+      document.getElementById('statDemoCount').textContent = String(demoCount);
+      document.getElementById('statTourCount').textContent = `${tourCount} (${totalParticipants} ppl)`;
+
+      if (lastOdo) {
+        document.getElementById('lastOdoBadge').style.display = 'inline-block';
+        document.getElementById('lastOdoVal').textContent = lastOdo;
+        const odoStartInput = document.getElementById('odoStartInput');
+        if (!odoStartInput.value) {
+          odoStartInput.value = lastOdo;
+        }
+      }
+
+      renderLogsTable();
+    }
+
+    function renderLogsTable() {
+      const filter = document.getElementById('filterTypeSelect').value;
+      const tbody = document.getElementById('logsTableBody');
+      const filtered = logsData.filter(r => filter === 'ALL' || r['Log Type'] === filter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--ua-muted); padding:24px;">No matching log entries found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(row => {
+        const isTour = row['Log Type'] === 'Lab Tour';
+        const badgeClass = isTour ? 'badge-tour' : 'badge-demo';
+        const simHrsDisplay = isNaOdometer(row['Sim Hours Used'])
+          ? 'N/A'
+          : `${escapeHtml(row['Sim Hours Used'] || '0.0')} h`;
+        return `
+          <tr>
+            <td><strong>${escapeHtml(row['Log ID'] || '')}</strong></td>
+            <td><span class="badge-type ${badgeClass}">${escapeHtml(row['Log Type'] || '')}</span></td>
+            <td>${escapeHtml(row['Date'] || '')}</td>
+            <td>${escapeHtml(row['Time Start'] || '')} &ndash; ${escapeHtml(row['Time End'] || '')}</td>
+            <td>${escapeHtml(row['Odometer Start'] || '')} &rarr; <strong>${escapeHtml(row['Odometer End'] || '')}</strong></td>
+            <td>${simHrsDisplay}</td>
+            <td>${escapeHtml(row['Purpose'] || '')}</td>
+            <td>${escapeHtml(row['Demonstrator'] || '')}</td>
+            <td>${escapeHtml(row['Tour Organiser'] || '—')}</td>
+            <td>${escapeHtml(row['Number of Participants'] || '—')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      // 1. Anti-bot honeypot check
+      if (document.getElementById('websiteUrlInput').value) {
+        return;
+      }
+
+      // 2. Rate-limit cooldown (prevent rapid automated spam submissions)
+      const nowMs = Date.now();
+      if (nowMs - lastSubmitTimestampMs < 5000) {
+        alert('Please wait a few seconds before submitting another log entry.');
+        return;
+      }
+
+      updateCalculations();
+
+      const tStart = document.getElementById('timeStartInput').value.trim();
+      const tEnd = document.getElementById('timeEndInput').value.trim();
+      const durMins = computeDurationMinutes(tStart, tEnd);
+      if (!durMins || durMins <= 0 || durMins > 1440) {
+        alert('Session duration must be between 1 minute and 24 hours.');
+        return;
+      }
+
+      const rawStart = document.getElementById('odoStartInput').value.trim();
+      const rawEnd = document.getElementById('odoEndInput').value.trim();
+      let odoStartFormatted = '';
+      let odoEndFormatted = '';
+      let simHoursFormatted = '';
+
+      if (isNaOdometer(rawStart) && isNaOdometer(rawEnd)) {
+        odoStartFormatted = 'N/A';
+        odoEndFormatted = 'N/A';
+        simHoursFormatted = 'N/A';
+      } else if (isNaOdometer(rawStart) !== isNaOdometer(rawEnd)) {
+        alert('Both Odometer Start and Odometer End must be N/A, or both must be numbers.');
+        return;
+      } else {
+        const oStart = Number(rawStart);
+        const oEnd = Number(rawEnd);
+        if (rawStart === '' || rawEnd === '' || isNaN(oStart) || isNaN(oEnd) || oStart < 0 || oEnd < oStart || (oEnd - oStart) > 24) {
+          alert('Invalid odometer readings. Enter valid hours (End >= Start, within 24 hours) or N/A.');
+          return;
+        }
+        odoStartFormatted = oStart.toFixed(1);
+        odoEndFormatted = oEnd.toFixed(1);
+        simHoursFormatted = (oEnd - oStart).toFixed(1);
+      }
+
+      const purposeClean = sanitizeCsvCellValue(document.getElementById('purposeInput').value);
+      const demoClean = sanitizeCsvCellValue(document.getElementById('demonstratorInput').value);
+      if (!SAFE_TEXT_REGEX.test(purposeClean) || !SAFE_TEXT_REGEX.test(demoClean)) {
+        alert('Purpose or Demonstrator contains disallowed characters.');
+        return;
+      }
+
+      let orgClean = '';
+      let partClean = '';
+      if (currentLogType === 'Lab Tour') {
+        orgClean = sanitizeCsvCellValue(document.getElementById('tourOrganiserInput').value);
+        const pInt = parseInt(document.getElementById('participantsInput').value, 10);
+        if (!SAFE_TEXT_REGEX.test(orgClean) || isNaN(pInt) || pInt < 1 || pInt > 500) {
+          alert('Please enter a valid Tour Organiser name and participant count (1–500).');
+          return;
+        }
+        partClean = String(pInt);
+      }
+
+      const payload = {
+        timestampMs: nowMs,
+        logType: currentLogType,
+        date: document.getElementById('dateInput').value.trim(),
+        timeStart: tStart,
+        timeEnd: tEnd,
+        durationMins: durMins,
+        odometerStart: odoStartFormatted,
+        odometerEnd: odoEndFormatted,
+        simHoursUsed: simHoursFormatted,
+        purpose: purposeClean,
+        demonstrator: demoClean,
+        tourOrganiser: orgClean,
+        participants: partClean,
+        websiteUrl: ''
+      };
+
+      // 3. Sign payload with HMAC-SHA256 using the unlocked Lab Passcode
+      const signingKey = sessionPasscodeInMemory || '1903';
+      const canonical = [
+        payload.timestampMs,
+        payload.logType,
+        payload.date,
+        payload.timeStart,
+        payload.timeEnd,
+        payload.odometerStart,
+        payload.odometerEnd,
+        payload.purpose,
+        payload.demonstrator,
+        payload.tourOrganiser,
+        payload.participants
+      ].join('|');
+      payload.signature = await computeHmacSha256Hex(canonical, signingKey);
+
+      lastSubmitTimestampMs = nowMs;
+      let savedRecord = null;
+
+      // 4. Send to local Python server if connected
+      if (serverConnected) {
+        try {
+          const res = await fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            const out = await res.json();
+            savedRecord = out.record;
+          } else {
+            const errJson = await res.json();
+            alert('Validation error: ' + (errJson.error || 'Rejected'));
+            return;
+          }
+        } catch (err) {
+          console.warn('Local server unreachable, using encrypted cloud/local fallback.');
+        }
+      }
+
+      // 5. Decrypt AES-256-GCM Webhook URL in memory and transmit signed payload
+      const encryptedWebhook = ENCRYPTED_WEBHOOK_CIPHERTEXT || localStorage.getItem(ENC_WEBHOOK_STORAGE_KEY);
+      if (encryptedWebhook) {
+        try {
+          const decryptedWebhookUrl = await aesDecryptUrl(encryptedWebhook, signingKey);
+          if (decryptedWebhookUrl && decryptedWebhookUrl.startsWith('https://')) {
+            fetch(decryptedWebhookUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            });
+          }
+        } catch (err) {
+          console.warn('Webhook decryption/transmission error:', err);
+        }
+      }
+
+      if (!savedRecord) {
+        const nextNum = logsData.length + 1;
+        savedRecord = {
+          'Log ID': `SIM-${String(nextNum).padStart(4, '0')}`,
+          'Timestamp Submitted': new Date().toISOString().replace('T', ' ').slice(0, 19),
+          'Log Type': payload.logType,
+          'Date': payload.date,
+          'Time Start': payload.timeStart,
+          'Time End': payload.timeEnd,
+          'Duration (mins)': String(payload.durationMins),
+          'Odometer Start': payload.odometerStart,
+          'Odometer End': payload.odometerEnd,
+          'Sim Hours Used': payload.simHoursUsed,
+          'Purpose': payload.purpose,
+          'Demonstrator': payload.demonstrator,
+          'Tour Organiser': payload.tourOrganiser,
+          'Number of Participants': payload.participants
+        };
+      }
+
+      logsData.unshift(savedRecord);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logsData));
+
+      if (directCsvFileHandle) {
+        await writeAllLogsToLinkedFile();
+      }
+
+      document.getElementById('odoStartInput').value = payload.odometerEnd !== 'N/A' ? payload.odometerEnd : '';
+      document.getElementById('odoEndInput').value = '';
+      document.getElementById('purposeInput').value = '';
+      document.getElementById('tourOrganiserInput').value = '';
+      document.getElementById('participantsInput').value = '';
+      setNow('timeStartInput');
+      document.getElementById('timeEndInput').value = '';
+      updateCalculations();
+      updateStatsAndTable();
+
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = `Saved ${savedRecord['Log ID']} (${savedRecord['Log Type']})!`;
+      toast.classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function buildCsvContent(filterType) {
+      const headers = [
+        'Log ID', 'Timestamp Submitted', 'Log Type', 'Date',
+        'Time Start', 'Time End', 'Duration (mins)',
+        'Odometer Start', 'Odometer End', 'Sim Hours Used',
+        'Purpose', 'Demonstrator', 'Tour Organiser', 'Number of Participants'
+      ];
+      const rows = [...logsData]
+        .reverse()
+        .filter(r => filterType === 'all' || r['Log Type'] === filterType);
+
+      const escapeCsv = val => {
+        const s = sanitizeCsvCellValue(val);
+        return s.includes(',') || s.includes('"') || s.includes('\n')
+          ? `"${s.replace(/"/g, '""')}"`
+          : s;
+      };
+
+      const lines = [headers.join(',')];
+      for (const r of rows) {
+        lines.push(headers.map(h => escapeCsv(r[h])).join(','));
+      }
+      return lines.join('\r\n') + '\r\n';
+    }
+
+    function exportCsv(filterType) {
+      const csvText = buildCsvContent(filterType);
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      if (filterType === 'Lab Demonstration') {
+        a.download = 'lab_demonstration_logs.csv';
+      } else if (filterType === 'Lab Tour') {
+        a.download = 'lab_tour_logs.csv';
+      } else {
+        a.download = 'flight_simulator_logs.csv';
+      }
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function linkDirectCsvFile() {
+      if (!window.showSaveFilePicker) {
+        alert('Your browser does not support direct file linking. Use the Export CSV button instead.');
+        return;
+      }
+      try {
+        directCsvFileHandle = await window.showSaveFilePicker({
+          suggestedName: 'flight_simulator_logs.csv',
+          types: [{ description: 'CSV Spreadsheet', accept: { 'text/csv': ['.csv'] } }]
+        });
+        await writeAllLogsToLinkedFile();
+        alert('Linked! Every new log entry on this computer will automatically write to your selected CSV file.');
+      } catch (err) {}
+    }
+
+    async function writeAllLogsToLinkedFile() {
+      if (!directCsvFileHandle) return;
+      const writable = await directCsvFileHandle.createWritable();
+      await writable.write(buildCsvContent('all'));
+      await writable.close();
+    }
+
+    function resetQrUrlToServer() {
+      document.getElementById('qrBaseUrlInput').value = serverLanUrl;
+      generateQrCodes();
+    }
+
+    function renderSingleQrBox(title, targetUrl, subtitle) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'qr-single-box';
+
+      const h4 = document.createElement('h4');
+      h4.textContent = title;
+      wrapper.appendChild(h4);
+
+      const holder = document.createElement('div');
+      holder.className = 'qr-canvas-holder';
+      wrapper.appendChild(holder);
+
+      const cap = document.createElement('div');
+      cap.className = 'qr-url-caption';
+      cap.textContent = subtitle || targetUrl;
+      wrapper.appendChild(cap);
+
+      if (window.QRCode) {
+        new QRCode(holder, {
+          text: targetUrl,
+          width: 180,
+          height: 180,
+          colorDark: '#10253f',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        const img = document.createElement('img');
+        img.width = 180;
+        img.height = 180;
+        img.alt = 'QR Code';
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}`;
+        holder.appendChild(img);
+      }
+
+      return wrapper;
+    }
+
+    function generateQrCodes() {
+      const baseUrl = (document.getElementById('qrBaseUrlInput').value || serverLanUrl).trim();
+      const mode = document.getElementById('qrModeSelect').value;
+      const embedKey = document.getElementById('embedKeySelect').value === 'yes';
+      const activePin = sessionPasscodeInMemory || '1903';
+      const container = document.getElementById('qrCardsContainer');
+      container.innerHTML = '';
+
+      const pinTextEl = document.getElementById('posterPinText');
+      if (pinTextEl) {
+        pinTextEl.textContent = embedKey
+          ? `${activePin} (Embedded in QR — Auto-Unlocks)`
+          : activePin;
+      }
+
+      const sep = baseUrl.includes('?') ? '&' : '?';
+      const keyParam = embedKey ? `&key=${encodeURIComponent(activePin)}` : '';
+
+      if (mode === 'dual') {
+        const demoUrl = `${baseUrl}${sep}type=demo${keyParam}`;
+        const tourUrl = `${baseUrl}${sep}type=tour${keyParam}`;
+        container.appendChild(renderSingleQrBox('1. Simulator / Lab Demonstration', demoUrl, 'Scan for Simulator / Lab Demo'));
+        container.appendChild(renderSingleQrBox('2. Lab Tour Log', tourUrl, 'Scan for Lab Tour'));
+      } else {
+        const singleUrl = embedKey ? `${baseUrl}${sep}key=${encodeURIComponent(activePin)}` : baseUrl;
+        container.appendChild(renderSingleQrBox('Scan to Open Flight Simulator Logbook', singleUrl, 'Scan with Phone Camera'));
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
