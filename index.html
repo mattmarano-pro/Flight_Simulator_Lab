@@ -1249,6 +1249,9 @@
       '0ef33736d78d9e235a2a9e29277b393880669be69095da55c6bacf7e19895bdb'
     ];
     const ADMIN_HASH = '659844d714dbe3ca67f9a3bb7b1c0d8110812f627cf813231eaa96ad3cf44f94';
+    // Standard SIM Passcode encrypted with AES-256-GCM under the Admin Passcode
+    // so QR codes generated in Admin mode always embed only the standard SIM passcode:
+    const ADMIN_ENCRYPTED_SIM_KEY = 'z6aROYTQwFUiM/K6A4kIIQ==.00Dfo5NCxpkGvJBO.rII8JemoM/cNVFi30c4XmJ6oy9KkU8lTUxMC';
 
     // Paste your AES-256-GCM Encrypted Webhook Ciphertext here when deploying to GitHub Pages:
     const ENCRYPTED_WEBHOOK_CIPHERTEXT = 'gq4AS6YEq/qxl3Ju845tGA==.lrc9U/zOGM01Wju/.hQ4Perwm2ZibqITyUC9kotuYL1er92K8h5tfffBoKtUkiGZcmA8JgFCe1MKoACRycmN2xEFyv+3VzrPZOxIDMptKsUIFvX9vPFIwIeCQWvS160bDCr3OfjRstVRtFWqel85JBXE/Y7i49dbABvLWXniI5xSaxz8dJjd2uRFn1nw=';
@@ -1462,7 +1465,8 @@
         unlockFormView();
       } else if (digest === ADMIN_HASH || upperDigest === ADMIN_HASH) {
         failedPinAttempts = 0;
-        sessionPasscodeInMemory = (digest === ADMIN_HASH) ? entered : entered.toUpperCase();
+        const adminKey = (digest === ADMIN_HASH) ? entered : entered.toUpperCase();
+        sessionPasscodeInMemory = await aesDecryptUrl(ADMIN_ENCRYPTED_SIM_KEY, adminKey);
         unlockFormView();
         enableAdminMode();
       } else {
@@ -1478,6 +1482,7 @@
     function unlockFormView() {
       document.getElementById('lockScreen').style.display = 'none';
       document.getElementById('appContent').style.display = 'block';
+      generateQrCodes();
     }
 
     async function promptAdminAccess() {
@@ -1490,7 +1495,8 @@
       const digest = await sha256Hex(CRYPTO_SALT + code.trim());
       const upperDigest = await sha256Hex(CRYPTO_SALT + code.trim().toUpperCase());
       if (digest === ADMIN_HASH || upperDigest === ADMIN_HASH) {
-        if (!sessionPasscodeInMemory) sessionPasscodeInMemory = (digest === ADMIN_HASH) ? code.trim() : code.trim().toUpperCase();
+        const adminKey = (digest === ADMIN_HASH) ? code.trim() : code.trim().toUpperCase();
+        sessionPasscodeInMemory = await aesDecryptUrl(ADMIN_ENCRYPTED_SIM_KEY, adminKey);
         unlockFormView();
         enableAdminMode();
         switchTab('history');
