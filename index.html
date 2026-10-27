@@ -823,7 +823,7 @@
       <h2>Flight Simulator Logbook</h2>
       <p>Enter the Lab Passcode displayed on the simulator console to open the logbook.</p>
       <form onsubmit="handleUnlockSubmit(event)">
-        <input type="password" id="labPinInput" class="pin-input" placeholder="&bull;&bull;&bull;&bull;" maxlength="24" autocomplete="off" required />
+        <input type="password" id="labPinInput" class="pin-input" maxlength="24" autocomplete="off" required />
         <div id="pinErrorMsg" class="pin-error">Incorrect Passcode. Please check the simulator console.</div>
         <button type="submit" class="submit-btn" style="width:100%;">Open Logbook</button>
       </form>
@@ -990,27 +990,8 @@
         </div>
       </div>
 
-      <!-- TAB 2: ADMIN LOG HISTORY & EXPORT (Admin Only) -->
+      <!-- TAB 2: ADMIN LOG HISTORY (Admin Only) -->
       <div id="pane-history" class="tab-pane">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Latest Odometer</div>
-            <div class="stat-value" id="statLastOdo">--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total Sim Hours Logged</div>
-            <div class="stat-value" id="statTotalHours">0.0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Lab Demonstrations</div>
-            <div class="stat-value" id="statDemoCount">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Lab Tours (Participants)</div>
-            <div class="stat-value" id="statTourCount">0 (0)</div>
-          </div>
-        </div>
-
         <div class="card">
           <div class="action-bar" style="margin-bottom: 12px;">
             <h3 style="color: var(--ua-navy); font-size: 1.05rem;">Recent Logs Recorded on This Device</h3>
@@ -1159,18 +1140,15 @@
      * ============================================================================
      * Passcodes are NEVER stored in plain text in this file. Only salted SHA-256
      * digests are stored below.
-     * - Default Lab Passcode digest matches "1903" or "UOA-SIM"
-     * - Default Admin Passcode digest matches "8492"
      */
-    const CRYPTO_SALT = 'UA_FLIGHT_SIM_SALT_2026:';
+    const CRYPTO_SALT = 'UA_FLIGHT_SIM_SALT_2026_SECURE:';
     const ALLOWED_LAB_HASHES = [
-      'd9c1335cf4817b9a84b401b943a54555e932e3be4df24a0836820f14cf6654bc',
-      '11c17f9925eeb651cb47174d72bdc91287d04601f48cf81d8bc598600bded418'
+      'bb2ed593dd1e6fab043e75e747058ea2bebf6bc5b43ef01639c8fb4be496dacb'
     ];
-    const ADMIN_HASH = 'b84067b7143b75009e8ad88179b398c6c13ad625d1515a5f79cc8e25a24a34ac';
+    const ADMIN_HASH = 'fbf270b3f19203a9ca7e963b2f4f940fbd1861bd138f29660bb1ba1d47dce56d';
 
     // Paste your AES-256-GCM Encrypted Webhook Ciphertext here when deploying to GitHub Pages:
-    const ENCRYPTED_WEBHOOK_CIPHERTEXT = 'ara4gq6mtoJEq5O1KtCt8g==.rGe3Ulvu1rvy7LzH.qU4yUoVNnnQaQvxL2weo6GmT2tkbHARHcH6AsFe9gFXtlMqrXsZbIXdteUfDhqMwmj4S6HkwmXDgkot5YQ40qKeKjP77lcgD2AloiB8Rl5Ua99r7IpHNTZ6ENIq4GrxQgt1EHuln1J6v43ayVbiZ/eUZm34d4SfNf4RS3LYXe74=';
+    const ENCRYPTED_WEBHOOK_CIPHERTEXT = 'XEQT1bNaKP9FMbHHip4ehw==.ZbslzuqKfSSqF0g7.Lf2qzanoPyTZEXkTp7W48y8KQ+2Z+v9AAG/BHwuggvJovph2qs/8WUvDqybTdaVusv1JRjPGn9hk6iVNoLfQUAmQt63jq2O6Lm4cpD/ouuCx/+pO+4Cw1Q9ipCfB3O/C3kOCLgNt6h/S1+ZK4jJw24hxs5PSj95QP63ry+DZ1QE=';
 
     // Strict input allowlist: Only alphanumeric, spaces, and benign punctuation (. , - / ( ) & ')
     const SAFE_TEXT_REGEX = /^[A-Za-z0-9\s\.,\-\/\(\)&']{1,120}$/;
@@ -1340,8 +1318,11 @@
       if (qrKey) {
         const candidateHash = await sha256Hex(CRYPTO_SALT + qrKey.trim());
         const upperHash = await sha256Hex(CRYPTO_SALT + qrKey.trim().toUpperCase());
-        if (ALLOWED_LAB_HASHES.includes(candidateHash) || ALLOWED_LAB_HASHES.includes(upperHash)) {
-          sessionPasscodeInMemory = '1903';
+        if (ALLOWED_LAB_HASHES.includes(candidateHash)) {
+          sessionPasscodeInMemory = qrKey.trim();
+          unlockFormView();
+        } else if (ALLOWED_LAB_HASHES.includes(upperHash)) {
+          sessionPasscodeInMemory = qrKey.trim().toUpperCase();
           unlockFormView();
         }
       }
@@ -1352,21 +1333,43 @@
       generateQrCodes();
     });
 
+    let failedPinAttempts = 0;
+    let pinLockoutUntil = 0;
+
     async function handleUnlockSubmit(e) {
       e.preventDefault();
+      const now = Date.now();
+      if (now < pinLockoutUntil) {
+        const waitSec = Math.ceil((pinLockoutUntil - now) / 1000);
+        alert(`Too many failed attempts. Please wait ${waitSec} second(s).`);
+        return;
+      }
+
       const entered = document.getElementById('labPinInput').value.trim();
       const digest = await sha256Hex(CRYPTO_SALT + entered);
       const upperDigest = await sha256Hex(CRYPTO_SALT + entered.toUpperCase());
 
-      if (ALLOWED_LAB_HASHES.includes(digest) || ALLOWED_LAB_HASHES.includes(upperDigest)) {
-        sessionPasscodeInMemory = '1903';
+      if (ALLOWED_LAB_HASHES.includes(digest)) {
+        failedPinAttempts = 0;
+        sessionPasscodeInMemory = entered;
         document.getElementById('posterPinText').textContent = entered;
         unlockFormView();
-      } else if (digest === ADMIN_HASH) {
-        sessionPasscodeInMemory = '1903';
+      } else if (ALLOWED_LAB_HASHES.includes(upperDigest)) {
+        failedPinAttempts = 0;
+        sessionPasscodeInMemory = entered.toUpperCase();
+        document.getElementById('posterPinText').textContent = entered.toUpperCase();
+        unlockFormView();
+      } else if (digest === ADMIN_HASH || upperDigest === ADMIN_HASH) {
+        failedPinAttempts = 0;
+        sessionPasscodeInMemory = (digest === ADMIN_HASH) ? entered : entered.toUpperCase();
         unlockFormView();
         enableAdminMode();
       } else {
+        failedPinAttempts++;
+        if (failedPinAttempts >= 5) {
+          pinLockoutUntil = Date.now() + 15000;
+          alert('Too many incorrect attempts. Lockout active for 15 seconds.');
+        }
         document.getElementById('pinErrorMsg').style.display = 'block';
       }
     }
@@ -1384,8 +1387,9 @@
       const code = prompt('Enter Admin Passcode to unlock Logs, CSV Export & AES Webhook Encryption:');
       if (!code) return;
       const digest = await sha256Hex(CRYPTO_SALT + code.trim());
-      if (digest === ADMIN_HASH) {
-        if (!sessionPasscodeInMemory) sessionPasscodeInMemory = '1903';
+      const upperDigest = await sha256Hex(CRYPTO_SALT + code.trim().toUpperCase());
+      if (digest === ADMIN_HASH || upperDigest === ADMIN_HASH) {
+        if (!sessionPasscodeInMemory) sessionPasscodeInMemory = (digest === ADMIN_HASH) ? code.trim() : code.trim().toUpperCase();
         unlockFormView();
         enableAdminMode();
         switchTab('history');
@@ -1406,7 +1410,11 @@
         alert('Please enter a valid https:// Webhook URL.');
         return;
       }
-      const passcodeToUse = sessionPasscodeInMemory || '1903';
+      const passcodeToUse = sessionPasscodeInMemory;
+      if (!passcodeToUse) {
+        alert('Please unlock with the Lab Passcode or Admin Passcode first.');
+        return;
+      }
       const encryptedBlob = await aesEncryptUrl(plainUrl, passcodeToUse);
       localStorage.setItem(ENC_WEBHOOK_STORAGE_KEY, encryptedBlob);
       document.getElementById('encryptedBlobOutput').value = encryptedBlob;
@@ -1658,37 +1666,8 @@
     }
 
     function updateStatsAndTable() {
-      document.getElementById('logCountBadge').textContent = logsData.length;
-
-      let lastOdo = '';
-      let totalHours = 0;
-      let demoCount = 0;
-      let tourCount = 0;
-      let totalParticipants = 0;
-
-      if (logsData.length > 0) {
-        for (const row of logsData) {
-          if (row['Odometer End'] && !isNaOdometer(row['Odometer End']) && !lastOdo) {
-            lastOdo = row['Odometer End'];
-          }
-          const hrs = parseFloat(row['Sim Hours Used']);
-          if (!isNaN(hrs) && hrs > 0) totalHours += hrs;
-
-          if (row['Log Type'] === 'Lab Tour') {
-            tourCount++;
-            const p = parseInt(row['Number of Participants'], 10);
-            if (!isNaN(p)) totalParticipants += p;
-          } else {
-            demoCount++;
-          }
-        }
-      }
-
-      document.getElementById('statLastOdo').textContent = lastOdo ? `${lastOdo} hrs` : '--';
-      document.getElementById('statTotalHours').textContent = `${totalHours.toFixed(1)} hrs`;
-      document.getElementById('statDemoCount').textContent = String(demoCount);
-      document.getElementById('statTourCount').textContent = `${tourCount} (${totalParticipants} ppl)`;
-
+      const badge = document.getElementById('logCountBadge');
+      if (badge) badge.textContent = logsData.length;
       renderLogsTable();
     }
 
@@ -1812,7 +1791,11 @@
       };
 
       // 3. Sign payload with HMAC-SHA256 using the unlocked Lab Passcode
-      const signingKey = sessionPasscodeInMemory || '1903';
+      const signingKey = sessionPasscodeInMemory;
+      if (!signingKey) {
+        alert('Session expired or passcode missing. Please unlock the logbook again.');
+        return;
+      }
       const canonical = [
         payload.timestampMs,
         payload.logType,
@@ -2037,19 +2020,19 @@
       const baseUrl = (document.getElementById('qrBaseUrlInput').value || serverLanUrl).trim();
       const mode = document.getElementById('qrModeSelect').value;
       const embedKey = document.getElementById('embedKeySelect').value === 'yes';
-      const activePin = sessionPasscodeInMemory || '1903';
+      const activePin = sessionPasscodeInMemory || '';
       const container = document.getElementById('qrCardsContainer');
       container.innerHTML = '';
 
       const pinTextEl = document.getElementById('posterPinText');
       if (pinTextEl) {
-        pinTextEl.textContent = embedKey
-          ? `${activePin} (Embedded in QR — Auto-Unlocks)`
-          : activePin;
+        pinTextEl.textContent = activePin
+          ? (embedKey ? `${activePin} (Embedded in QR — Auto-Unlocks)` : activePin)
+          : 'Ask Lab Demonstrator / Console';
       }
 
       const sep = baseUrl.includes('?') ? '&' : '?';
-      const keyParam = embedKey ? `&key=${encodeURIComponent(activePin)}` : '';
+      const keyParam = (embedKey && activePin) ? `&key=${encodeURIComponent(activePin)}` : '';
 
       if (mode === 'dual') {
         const demoUrl = `${baseUrl}${sep}type=demo${keyParam}`;
@@ -2057,7 +2040,7 @@
         container.appendChild(renderSingleQrBox('1. Simulator / Lab Demonstration', demoUrl, 'Scan for Simulator / Lab Demo'));
         container.appendChild(renderSingleQrBox('2. Lab Tour Log', tourUrl, 'Scan for Lab Tour'));
       } else {
-        const singleUrl = embedKey ? `${baseUrl}${sep}key=${encodeURIComponent(activePin)}` : baseUrl;
+        const singleUrl = (embedKey && activePin) ? `${baseUrl}${sep}key=${encodeURIComponent(activePin)}` : baseUrl;
         container.appendChild(renderSingleQrBox('Scan to Open Flight Simulator Logbook', singleUrl, 'Scan with Phone Camera'));
       }
     }
