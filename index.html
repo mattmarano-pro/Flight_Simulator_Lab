@@ -878,15 +878,15 @@
       }
 
       .qr-canvas-holder {
-        min-width: 150px !important;
-        min-height: 150px !important;
-        padding: 6px !important;
+        min-width: 230px !important;
+        min-height: 230px !important;
+        padding: 10px !important;
       }
 
       .qr-canvas-holder img,
       .qr-canvas-holder canvas {
-        width: 150px !important;
-        height: 150px !important;
+        width: 230px !important;
+        height: 230px !important;
       }
 
       .qr-url-caption {
@@ -2079,7 +2079,7 @@
       generateQrCodes();
     }
 
-    function renderSingleQrBox(title, targetUrl, subtitle, qrSize = 160) {
+    function renderSingleQrBox(title, targetUrl, subtitle, qrSize = 240) {
       const wrapper = document.createElement('div');
       wrapper.className = 'qr-single-box';
 
@@ -2091,10 +2091,12 @@
       holder.className = 'qr-canvas-holder';
       wrapper.appendChild(holder);
 
-      const cap = document.createElement('div');
-      cap.className = 'qr-url-caption';
-      cap.textContent = subtitle || targetUrl;
-      wrapper.appendChild(cap);
+      if (subtitle) {
+        const cap = document.createElement('div');
+        cap.className = 'qr-url-caption';
+        cap.textContent = subtitle;
+        wrapper.appendChild(cap);
+      }
 
       if (window.QRCode) {
         new QRCode(holder, {
@@ -2131,11 +2133,11 @@
       if (mode === 'dual') {
         const demoUrl = `${baseUrl}${sep}type=demo${keyParam}`;
         const tourUrl = `${baseUrl}${sep}type=tour${keyParam}`;
-        container.appendChild(renderSingleQrBox('1. Simulator / Lab Demo', demoUrl, 'Scan for Simulator / Lab Demo', 130));
-        container.appendChild(renderSingleQrBox('2. Lab Tour Log', tourUrl, 'Scan for Lab Tour', 130));
+        container.appendChild(renderSingleQrBox('1. Simulator / Lab Demo', demoUrl, '', 175));
+        container.appendChild(renderSingleQrBox('2. Lab Tour Log', tourUrl, '', 175));
       } else {
         const singleUrl = (embedKey && activePin) ? `${baseUrl}${sep}key=${encodeURIComponent(activePin)}` : baseUrl;
-        container.appendChild(renderSingleQrBox('Flight Simulator Digital Logbook', singleUrl, 'Scan with phone camera to auto-unlock & log', 160));
+        container.appendChild(renderSingleQrBox('Flight Simulator Digital Logbook', singleUrl, '', 240));
       }
     }
 
