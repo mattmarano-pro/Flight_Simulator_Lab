@@ -983,7 +983,7 @@
 
             <!-- Auto-Saved Session Draft Banner -->
             <div id="draftBanner" style="display:none; background: var(--ua-blue-light); border: 1.5px solid #b6d4f5; color: var(--ua-navy); padding: 9px 14px; border-radius: 8px; font-size: 0.84rem; margin-bottom: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-              <span>&#128190; <strong>Draft saved</strong> &bull; Resumed from your earlier start time &amp; odometer</span>
+              <span>&#128190; <strong>Draft saved</strong> &bull; Resumed from your earlier start time &amp; running time</span>
               <button type="button" onclick="resetFormAndDraft()" style="background:none; border:none; color: #b91c1c; font-weight: 700; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">Reset Form</button>
             </div>
 
@@ -1025,18 +1025,18 @@
                 </div>
               </div>
 
-              <!-- Odometer Start -->
+              <!-- Running Time Start -->
               <div class="form-group">
-                <label for="odoStartInput">Odometer Start (hrs) <span class="req">*</span></label>
+                <label for="odoStartInput">Running Time Start (hrs) <span class="req">*</span></label>
                 <div class="input-row">
                   <input type="text" inputmode="decimal" id="odoStartInput" placeholder="e.g. 1245.5 or N/A" maxlength="12" required oninput="updateCalculations()" />
                   <button type="button" class="quick-btn" onclick="setOdometerNA()">N/A</button>
                 </div>
               </div>
 
-              <!-- Odometer End -->
+              <!-- Running Time End -->
               <div class="form-group">
-                <label for="odoEndInput">Odometer End (hrs) <span class="req">*</span></label>
+                <label for="odoEndInput">Running Time End (hrs) <span class="req">*</span></label>
                 <div class="input-row">
                   <input type="text" inputmode="decimal" id="odoEndInput" placeholder="e.g. 1246.8 or N/A" maxlength="12" required oninput="updateCalculations()" />
                   <button type="button" class="quick-btn" onclick="setOdometerNA()">N/A</button>
@@ -1087,7 +1087,7 @@
               <!-- Live Summary Calculation Bar -->
               <div class="calc-bar">
                 <div>Session Duration: <strong id="calcDuration">-- mins</strong></div>
-                <div>Simulator Odometer Delta: <strong id="calcSimHours">-- hrs</strong></div>
+                <div>Simulator Running Time Delta: <strong id="calcSimHours">-- hrs</strong></div>
                 <div>Log Mode: <strong id="calcModeLabel">Lab Demonstration</strong></div>
               </div>
 
@@ -1122,7 +1122,7 @@
                   <th>Type</th>
                   <th>Date</th>
                   <th>Start–End</th>
-                  <th>Odometer (Start &rarr; End)</th>
+                  <th>Running Time (Start &rarr; End)</th>
                   <th>Sim Hrs</th>
                   <th>Purpose</th>
                   <th>Demonstrator</th>
@@ -1192,7 +1192,7 @@
           <div class="qr-cards-container" id="qrCardsContainer"></div>
 
           <div class="poster-footer-info" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ua-border); font-size: 0.8rem; color: var(--ua-muted); display:flex; justify-content:space-around; flex-wrap:wrap; gap:8px;">
-            <div><strong>Simulator / Lab Demo:</strong> Start/End Time, Odometer Start/End, Purpose, Demonstrator</div>
+            <div><strong>Simulator / Lab Demo:</strong> Start/End Time, Running Time Start/End, Purpose, Demonstrator</div>
             <div><strong>Lab Tour:</strong> + Tour Organiser &amp; Number of Participants</div>
           </div>
         </div>
@@ -1707,7 +1707,7 @@
 
       if (isNaOdometer(rawStart) || isNaOdometer(rawEnd)) {
         if (rawStart && rawEnd && (isNaOdometer(rawStart) !== isNaOdometer(rawEnd))) {
-          odoEndEl.setCustomValidity('Both Odometer Start and End must be N/A or both must be numbers.');
+          odoEndEl.setCustomValidity('Both Running Time Start and End must be N/A or both must be numbers.');
           document.getElementById('calcSimHours').textContent = 'Mismatch (N/A)';
           document.getElementById('calcSimHours').style.color = '#fca5a5';
         } else {
@@ -1722,17 +1722,17 @@
       const oEnd = Number(rawEnd);
 
       if (rawStart !== '' && (isNaN(oStart) || oStart < 0 || oStart > 999999)) {
-        odoStartEl.setCustomValidity('Enter a valid odometer number (0–999999) or N/A.');
+        odoStartEl.setCustomValidity('Enter a valid running time number (0–999999) or N/A.');
       }
 
       if (rawStart !== '' && rawEnd !== '' && !isNaN(oStart) && !isNaN(oEnd)) {
         const delta = (oEnd - oStart).toFixed(1);
         if (oEnd < oStart) {
-          odoEndEl.setCustomValidity('Odometer End must be greater than or equal to Odometer Start.');
+          odoEndEl.setCustomValidity('Running Time End must be greater than or equal to Running Time Start.');
           document.getElementById('calcSimHours').textContent = 'Invalid (< Start)';
           document.getElementById('calcSimHours').style.color = '#fca5a5';
         } else if (oEnd - oStart > 24) {
-          odoEndEl.setCustomValidity('Single session odometer increase cannot exceed 24.0 hours.');
+          odoEndEl.setCustomValidity('Single session running time increase cannot exceed 24.0 hours.');
           document.getElementById('calcSimHours').textContent = 'Invalid (> 24h)';
           document.getElementById('calcSimHours').style.color = '#fca5a5';
         } else {
@@ -1741,7 +1741,7 @@
           document.getElementById('calcSimHours').style.color = '#ffffff';
         }
       } else if (rawEnd !== '' && isNaN(oEnd)) {
-        odoEndEl.setCustomValidity('Enter a valid odometer number or N/A.');
+        odoEndEl.setCustomValidity('Enter a valid running time number or N/A.');
         document.getElementById('calcSimHours').textContent = 'Invalid';
         document.getElementById('calcSimHours').style.color = '#fca5a5';
       } else {
@@ -1793,12 +1793,14 @@
         const simHrsDisplay = isNaOdometer(row['Sim Hours Used'])
           ? 'N/A'
           : `${escapeHtml(row['Sim Hours Used'] || '0.0')} h`;
+        const rtStart = row['Running Time Start'] || row['Odometer Start'] || '';
+        const rtEnd = row['Running Time End'] || row['Odometer End'] || '';
         return `
           <tr>
             <td><span class="badge-type ${badgeClass}">${escapeHtml(row['Log Type'] || '')}</span></td>
             <td>${escapeHtml(row['Date'] || '')}</td>
             <td>${escapeHtml(row['Time Start'] || '')} &ndash; ${escapeHtml(row['Time End'] || '')}</td>
-            <td>${escapeHtml(row['Odometer Start'] || '')} &rarr; <strong>${escapeHtml(row['Odometer End'] || '')}</strong></td>
+            <td>${escapeHtml(rtStart)} &rarr; <strong>${escapeHtml(rtEnd)}</strong></td>
             <td>${simHrsDisplay}</td>
             <td>${escapeHtml(row['Purpose'] || '')}</td>
             <td>${escapeHtml(row['Demonstrator'] || '')}</td>
@@ -1845,13 +1847,13 @@
         odoEndFormatted = 'N/A';
         simHoursFormatted = 'N/A';
       } else if (isNaOdometer(rawStart) !== isNaOdometer(rawEnd)) {
-        alert('Both Odometer Start and Odometer End must be N/A, or both must be numbers.');
+        alert('Both Running Time Start and Running Time End must be N/A, or both must be numbers.');
         return;
       } else {
         const oStart = Number(rawStart);
         const oEnd = Number(rawEnd);
         if (rawStart === '' || rawEnd === '' || isNaN(oStart) || isNaN(oEnd) || oStart < 0 || oEnd < oStart || (oEnd - oStart) > 24) {
-          alert('Invalid odometer readings. Enter valid numbers (End >= Start, within 24 hours) or N/A.');
+          alert('Invalid running time readings. Enter valid numbers (End >= Start, within 24 hours) or N/A.');
           return;
         }
         odoStartFormatted = oStart.toFixed(1);
@@ -1966,8 +1968,8 @@
           'Time Start': payload.timeStart,
           'Time End': payload.timeEnd,
           'Duration (mins)': String(payload.durationMins),
-          'Odometer Start': payload.odometerStart,
-          'Odometer End': payload.odometerEnd,
+          'Running Time Start': payload.odometerStart,
+          'Running Time End': payload.odometerEnd,
           'Sim Hours Used': payload.simHoursUsed,
           'Purpose': payload.purpose,
           'Demonstrator': payload.demonstrator,
@@ -2014,7 +2016,7 @@
       const headers = [
         'Timestamp Submitted', 'Log Type', 'Date',
         'Time Start', 'Time End', 'Duration (mins)',
-        'Odometer Start', 'Odometer End', 'Sim Hours Used',
+        'Running Time Start', 'Running Time End', 'Sim Hours Used',
         'Purpose', 'Demonstrator', 'Tour Organiser', 'Number of Participants'
       ];
       const rows = [...logsData]
