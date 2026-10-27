@@ -834,7 +834,7 @@
       <!-- Admin Navigation Tabs -->
       <div id="adminNavTabs" class="nav-tabs no-print">
         <button class="nav-tab active" id="tabBtn-form" onclick="switchTab('form')">New Log Entry</button>
-        <button class="nav-tab" id="tabBtn-history" onclick="switchTab('history')">Admin: Logs &amp; Export (<span id="logCountBadge">0</span>)</button>
+        <button class="nav-tab" id="tabBtn-history" onclick="switchTab('history')">Admin: Device Logs (<span id="logCountBadge">0</span>)</button>
         <button class="nav-tab" id="tabBtn-qr" onclick="switchTab('qr')">Admin: QR Poster</button>
         <button class="nav-tab" id="tabBtn-settings" onclick="switchTab('settings')">Admin: Encryption &amp; Setup</button>
       </div>
@@ -1012,8 +1012,8 @@
         </div>
 
         <div class="card">
-          <div class="action-bar" style="margin-bottom: 14px;">
-            <h3 style="color: var(--ua-navy); font-size: 1.05rem;">Recorded Log Entries &amp; CSV Export</h3>
+          <div class="action-bar" style="margin-bottom: 12px;">
+            <h3 style="color: var(--ua-navy); font-size: 1.05rem;">Recent Logs Recorded on This Device</h3>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <select id="filterTypeSelect" onchange="renderLogsTable()" style="width:auto; padding:7px 12px; font-size:0.85rem;">
                 <option value="ALL">All Log Types</option>
@@ -1023,12 +1023,8 @@
             </div>
           </div>
 
-          <div class="action-bar" style="margin-bottom: 16px;">
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-              <button type="button" class="btn-primary" onclick="exportCsv('all')">&#11015; Export All Logs (.CSV)</button>
-              <button type="button" class="btn-secondary" onclick="exportCsv('Lab Demonstration')">&#11015; Lab Demo Logs (.CSV)</button>
-              <button type="button" class="btn-secondary" onclick="exportCsv('Lab Tour')">&#11015; Lab Tour Logs (.CSV)</button>
-            </div>
+          <div style="background: var(--ua-blue-light); border: 1.5px solid #b6d4f5; color: var(--ua-navy); padding: 11px 16px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.45;">
+            &#8505;&#65039; <strong>Note:</strong> These are only the recent log entries submitted from this specific device. Master logs across all phones and demonstrators are stored in the central spreadsheet.
           </div>
 
           <div class="table-wrap">
