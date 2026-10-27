@@ -1119,7 +1119,6 @@
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Type</th>
                   <th>Date</th>
                   <th>Start–End</th>
@@ -1133,7 +1132,7 @@
               </thead>
               <tbody id="logsTableBody">
                 <tr>
-                  <td colspan="10" style="text-align:center; color:var(--ua-muted); padding:24px;">No log entries recorded yet.</td>
+                  <td colspan="9" style="text-align:center; color:var(--ua-muted); padding:24px;">No log entries recorded yet.</td>
                 </tr>
               </tbody>
             </table>
@@ -1784,7 +1783,7 @@
       const filtered = logsData.filter(r => filter === 'ALL' || r['Log Type'] === filter);
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--ua-muted); padding:24px;">No matching log entries found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--ua-muted); padding:24px;">No matching log entries found.</td></tr>`;
         return;
       }
 
@@ -1796,7 +1795,6 @@
           : `${escapeHtml(row['Sim Hours Used'] || '0.0')} h`;
         return `
           <tr>
-            <td><strong>${escapeHtml(row['Log ID'] || '')}</strong></td>
             <td><span class="badge-type ${badgeClass}">${escapeHtml(row['Log Type'] || '')}</span></td>
             <td>${escapeHtml(row['Date'] || '')}</td>
             <td>${escapeHtml(row['Time Start'] || '')} &ndash; ${escapeHtml(row['Time End'] || '')}</td>
@@ -1961,9 +1959,7 @@
       }
 
       if (!savedRecord) {
-        const nextNum = logsData.length + 1;
         savedRecord = {
-          'Log ID': `SIM-${String(nextNum).padStart(4, '0')}`,
           'Timestamp Submitted': new Date().toISOString().replace('T', ' ').slice(0, 19),
           'Log Type': payload.logType,
           'Date': payload.date,
@@ -2009,14 +2005,14 @@
       updateStatsAndTable();
 
       const toast = document.getElementById('toast');
-      document.getElementById('toastMsg').textContent = `Saved ${savedRecord['Log ID']} (${savedRecord['Log Type']})!`;
+      document.getElementById('toastMsg').textContent = `Saved ${savedRecord['Log Type']} entry!`;
       toast.classList.add('show');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function buildCsvContent(filterType) {
       const headers = [
-        'Log ID', 'Timestamp Submitted', 'Log Type', 'Date',
+        'Timestamp Submitted', 'Log Type', 'Date',
         'Time Start', 'Time End', 'Duration (mins)',
         'Odometer Start', 'Odometer End', 'Sim Hours Used',
         'Purpose', 'Demonstrator', 'Tour Organiser', 'Number of Participants'
